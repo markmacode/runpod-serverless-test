@@ -9,7 +9,6 @@ from typing import Any, cast
 import runpod
 import torch
 from diffusers.pipelines.flux.pipeline_flux import FluxPipeline
-from diffusers.pipelines.flux.pipeline_output import FluxPipelineOutput
 from runpod.serverless.utils import rp_upload
 from runpod.serverless.utils.rp_cleanup import clean
 from runpod.serverless.utils.rp_validator import validate
@@ -107,6 +106,15 @@ def resolve_snapshot_path(model_id: str) -> str:
     raise RuntimeError(f"Cached model not found: {model_id}")
 
 
+def get_model() -> FluxPipeline:
+    cache_path = resolve_snapshot_path(MODEL_ID)
+    return FluxPipeline.from_pretrained(
+        cache_path,
+        torch_dtype=torch.bfloat16,
+        local_files_only=True,
+    ).to("cuda")
+
+
 def get_seed(input: dict) -> int:
     """
     Get the seed for the image generation.
@@ -123,12 +131,7 @@ def get_seed(input: dict) -> int:
     return random.randint(0, 2**32 - 1)
 
 
-LOCAL_PATH = resolve_snapshot_path(MODEL_ID)
-model: FluxPipeline = FluxPipeline.from_pretrained(
-    LOCAL_PATH,
-    torch_dtype=torch.bfloat16,
-    local_files_only=True,
-).to("cuda")
+model = get_model()
 
 
 def handler(event: dict[str, Any]) -> Any:
