@@ -1,0 +1,9 @@
+[project]
+name = "runpod-serverless"
+version = "0.1.0"
+description = "Runpod serverless application for a coding assignment running an image generation LLM."
+readme = "README.md"
+requires-python = ">=3.15"
+dependencies = [
+    "runpod>=1.12.0",
+]
