@@ -8,7 +8,7 @@ HF_CACHE_ROOT = "/runpod-volume/huggingface-cache/hub"
 #             so the container needs no extra config).
 #   local:    real model from the local Hugging Face cache, downloading it if missing,
 #             on the best available device. Use small generation params in the request
-#             (see `just test-real`), as full size is very slow without a datacenter GPU.
+#             (see `just run`), as full size is very slow without a datacenter GPU.
 #   mock:     stand-in pipeline with no weights, for exercising the handler logic.
 MODE = os.environ.get("HANDLER_MODE", "deployed")
 if MODE not in ("deployed", "local", "mock"):

@@ -14,6 +14,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "python-dotenv>=1.2.4",
+    "pytest==9.1.1",
+    "python-dotenv==1.2.4",
     "rust-just==1.59.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The worker modules sit at the repo root rather than in a package
+pythonpath = ["."]
