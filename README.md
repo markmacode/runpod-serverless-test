@@ -54,7 +54,8 @@ The model loads once, when the worker starts, and is reused for every request. `
 
 ## Running locally
 
-**Prerequisites:** [uv](https://docs.astral.sh/uv/) with Python 3.14. This project has `just` is installed as a dev dependency, so after `uv sync` you can run it as `uv run just <recipe>` (or `just <recipe>` if it is accesible in your `PATH`). You can run `just --list` to see every recipe and what they do.
+> [!IMPORTANT]
+> This project requires [uv](https://docs.astral.sh/uv/) and Python 3.14. This project also has `just` as a dev dependency to help with common CLI commands, so after `uv sync` you can run it as `uv run just <recipe>` (or `just <recipe>` if it is accesible in your `PATH`). You can run `just --list` to see every recipe and what they do.
 
 ```sh
 uv sync
@@ -103,11 +104,12 @@ curl -X POST https://api.runpod.ai/v2/<ENDPOINT_ID>/runsync \
 
 ### Observations
 
+- Delay time has a big difference (200x - 300x faster, from 30+ seconds down to around 100ms) on an active instance vs a cold start. This is even with model caching enabled. If there was a steady stream of expected traffic, it would be worth setting the minimum active workers to something greater than `0`, or increasing the idle timout to something greater than the default `5` seconds.
 - The docs don't give much guidance on a testing strategy with a mock model, so that you can isolate testing on the handler logic. A lot of local machines (mine included) wouldn't be viable for running the full weight models for quick handler testing. I implemented this in my own way, but documenting a best practice could help with local testing for users.
 - I was getting OOM errors before on initialisation, so before any request was even sent or handled. The [model caching tutorial](https://docs.runpod.io/tutorials/serverless/model-caching-text) and [handler function best practices](https://docs.runpod.io/serverless/workers/handler-functions#handler-function-best-practices) loads the model at module level (this is what I initially tried), but this breaks on Python 3.14.
+  - TODO: I am confirming this on a Python 3.11 image that follows the docs instead of my solution.
   - The Runpod SDK runs its [heartbeat in a child process](https://github.com/runpod/runpod-python/blob/397c37d3d2a04aaa2eb3c8a83cdc359e230bcb6e/runpod/serverless/modules/rp_ping.py#L83-L87), and Python 3.14 [changed Linux's default start method](https://docs.python.org/3/whatsnew/3.14.html#multiprocessing) from `fork` to `forkserver`. The forkserver is a fresh Python process that [imports the main module](https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods) before forking children, so it ran `handler.py` again and loaded a second copy of the model. From to docs: *"Make sure that the main module can be safely imported by a new Python interpreter without causing unintended side effects"*
   - With FLUX this needed roughly 64GB on a 44GB GPU and crashed the worker with `CUDA out of memory`. The tutorial uses Python 3.11 and a small model, so the problem never shows there. Loading the model under `if __name__ == "__main__":` keeps the "load once at startup" behaviour and works on any Python version.
-
 
 ### Documentation discrepancies
 
