@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -6,14 +9,21 @@ from runpod.serverless.utils.rp_validator import validate
 
 import handler
 from handler import bounded, schema
+from model import MockPipeline
+
+
+@pytest.fixture(autouse=True)
+def mock_model(monkeypatch):
+    """Give the handler the stand-in pipeline, which it otherwise loads under __main__."""
+    monkeypatch.setattr(handler, "model", MockPipeline())
 
 
 @pytest.fixture(autouse=True)
 def uploads(monkeypatch):
     """
     Replace the upload with one that keeps each image in memory, so tests never
-    reach a bucket (mock mode loads .env, which may hold real credentials) or write
-    to simulated_uploaded/.
+    reach a bucket (local and mock modes load .env, which may hold real credentials)
+    or write to simulated_uploaded/.
     """
     uploaded = []
 
@@ -204,3 +214,21 @@ def test_returns_error_when_inference_fails(monkeypatch, uploads):
 
     assert run({"prompt": "x"}) == {"error": "CUDA out of memory"}
     assert uploads == []
+
+
+def test_importing_handler_does_not_load_model():
+    """
+    Runpod's heartbeat runs in a child process that re-imports handler.py (forkserver
+    on Linux, spawn on macOS). Loading the model at import put a second copy of FLUX
+    on the GPU and ran it out of memory.
+    """
+    result = subprocess.run(
+        [sys.executable, "-c", "import handler; print(handler.model)"],
+        cwd=Path(__file__).parent.parent,
+        env=os.environ | {"HANDLER_MODE": "mock"},
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip() == "None"
+    assert "Loading model" not in result.stderr

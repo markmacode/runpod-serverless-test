@@ -1,3 +1,4 @@
+from config import MODEL_ID
 import logging
 import random
 import tempfile
@@ -97,7 +98,10 @@ def get_seed(input: dict) -> int:
     return random.randint(0, 2**32 - 1)
 
 
-model = get_model()
+# Loaded under __main__ below, not at import. Runpod runs its heartbeat in a child
+# process, and with Python 3.14's default start method on Linux (forkserver) the child
+# re-imports this file. Loading here would put a second copy of the model on the GPU.
+model = None
 
 
 def handler(event: dict[str, Any]) -> Any:
@@ -131,6 +135,10 @@ def handler(event: dict[str, Any]) -> Any:
             key: input[key] if input[key] is not None else default
             for key, default in GENERATION_DEFAULTS.items()
         }
+        
+        if model is None:
+            return {"error": f"Model {MODEL_ID} was not loaded correctly."}
+            
         image = model(
             prompt,
             **params,
@@ -155,4 +163,5 @@ def handler(event: dict[str, Any]) -> Any:
 
 
 if __name__ == "__main__":
+    model = get_model()
     runpod.serverless.start({"handler": handler})

@@ -14,8 +14,10 @@ run:
 download:
     uv run hf download black-forest-labs/FLUX.1-dev --exclude flux1-dev.safetensors ae.safetensors
 
+# Build the worker's Docker image for Runpod (linux/amd64)
 build:
     docker build --platform linux/amd64 --tag markbromell/runpod-serverless-test .
 
+# Push the built image to Docker Hub
 push:
     docker push markbromell/runpod-serverless-test
