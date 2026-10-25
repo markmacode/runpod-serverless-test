@@ -93,7 +93,7 @@ class MockPipeline:
         return SimpleNamespace(images=[image])
 
 
-def get_model() -> FluxPipeline | MockPipeline:
+def get_model() -> "FluxPipeline | MockPipeline":
     log.info(f"Loading model in '{MODE}' mode")
     if MODE == "mock":
         return MockPipeline()

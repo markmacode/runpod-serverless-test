@@ -16,8 +16,8 @@ download:
 
 # Build the worker's Docker image for Runpod (linux/amd64)
 build:
-    docker build --platform linux/amd64 --tag markbromell/runpod-serverless-test .
+    docker build --platform linux/amd64 --tag markbromell/runpod-serverless-test:python-3.11 .
 
 # Push the built image to Docker Hub
 push:
-    docker push markbromell/runpod-serverless-test
+    docker push markbromell/runpod-serverless-test:python-3.11
